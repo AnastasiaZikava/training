@@ -10,8 +10,8 @@ class Registration
 	
 	public
 	def general_method
-		# check_email
-		password = check_password
+		check_email
+		check_password
 	end
 
 
