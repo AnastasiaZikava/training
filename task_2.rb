@@ -1,64 +1,80 @@
-require 'bcrypt'
+require 'digest'
+
+module ConstantList
+  PASSWORD_RULES = "Write password \n Password must contain: \n uppercase letters \n numbers \n at least 8 characters long"
+  VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
+  PASSWORD_FORMAT = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,40}$/
+end
+
+module BCrypt
+  def encrypt(pass)
+    @encrypt_password = Digest::SHA2.hexdigest pass.to_s
+    puts "Encrypt password: #{@encrypt_password}"
+  end
+
+  def check_password(pass)
+   Digest::SHA2.hexdigest(pass) == @encrypt_password.to_s ? true : false
+  end
+end
+
 
 class Registration
+  include ConstantList
+  include BCrypt
 
-  VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
-
-  PASSWORD_FORMAT = /^(?=.*\d)(?=.*([a-z]|[A-Z]))([\x20-\x7E]){8,40}$/
-
-  PASSWORD_RULES = "Write password \n Password must contain: \n uppercase letters \n numbers \n at least 8 characters long"
+  attr_accessor :email, :password
   
   public
   def general_method
-    check_email
-    check_password
+    get_email
+    get_password
+    password_replay
+    show_registration_info
   end
 
 
   private
-  def check_email
+  def get_email
     puts 'Write email'
 
-    email = gets.chomp
-    if email.empty? || !(email =~ VALID_EMAIL_REGEX)
+    @email = gets.chomp.strip
+    if @email.empty? || !(@email =~ VALID_EMAIL_REGEX)
       puts "You need to enter this type of mail: example@mail.com"
-      check_email
+      get_email
     else
-      puts "Your email: #{email}"
+      puts "Your email: #{@email}"
     end
   end
 
-  def check_password
+  def get_password
     puts PASSWORD_RULES
-    password = gets.chomp
+    @password = gets.chomp.strip
 
-    if password.length < 8 || password.empty? || !(PASSWORD_FORMAT.match(password.to_s))
-      check_password
+    if @password.length < 8 || @password.empty? || !(PASSWORD_FORMAT.match(@password.to_s))
+      get_password
     else
-      puts "Your password: #{password} "
-      encrypt_password(password)
+      puts "Your password: #{@password} "
+      encrypt(@password)
     end 
   end
 
-  def encrypt_password(password)
-    encrypt_pass = BCrypt::Password.create(password.to_s)
-    puts "Encrypt_password: #{encrypt_pass}"
-    check_repeat_password(encrypt_pass)
-  end
-
-  def check_repeat_password(encrypt_password)
-    puts 'Enter password again:'
-    repeat_password = gets.chomp
-
-    if repeat_password == BCrypt::Password.new(encrypt_password.to_s)
-      puts 'Good! Password saved.'
+  def password_replay
+    puts 'Repeat password'
+    repeat_password = gets.chomp.strip
+    if check_password(repeat_password)
+      puts 'Good! Registration completed successfully'
     else
-      puts "Passwords don't match. Please repeat password."
-      check_repeat_password(encrypt_password)
+      password_replay
     end
   end
 
+  def show_registration_info
+    puts "Your email: #{@email}\nYour password: #{@password} \n Thank you!"
+  end
 end
 
 my_registration = Registration.new
 my_registration.general_method
+
+
+
